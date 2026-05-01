@@ -263,7 +263,7 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
           <div class="chart-wrap"><canvas id="ch-loaikh"></canvas></div>
         </div>
         <div class="card">
-          <div class="card-title">Tồn kho theo tỉnh</div>
+          <div class="card-title">Tồn kho theo miền</div>
           <div class="card-subtitle">Nguồn: <span class="cuboid-tag">olap_tk_tinh</span></div>
           <div class="chart-wrap"><canvas id="ch-tonkho-tinh"></canvas></div>
         </div>
@@ -341,6 +341,10 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
           <label>Lọc · Loại KH</label>
           <select id="ds-loai-kh"><option value="">— Tất cả —</option></select>
         </div>
+        <div class="field" data-need="kh_key">
+          <label>Lọc · Khách hàng</label>
+          <select id="ds-kh"><option value="">— Tất cả —</option></select>
+        </div>
         <div class="field" data-need="mh_key">
           <label>Lọc · Mặt hàng</label>
           <select id="ds-mh"><option value="">— Tất cả —</option></select>
@@ -394,7 +398,7 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
           <span class="axis-label">📍 Vị trí</span>
           <div class="seg" data-axis="loc" data-cube="tk">
             <button class="seg-item active" data-val="none">Không</button>
-            <button class="seg-item" data-val="tinh">Tỉnh</button>
+            <button class="seg-item" data-val="tinh">Miền</button>
             <button class="seg-item" data-val="tp">Thành phố</button>
             <button class="seg-item" data-val="ch">Cửa hàng</button>
           </div>
@@ -431,8 +435,12 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
           </select>
         </div>
         <div class="field" data-need="bang">
-          <label>Lọc · Tỉnh</label>
+          <label>Lọc · Miền</label>
           <select id="tk-tinh"><option value="">— Tất cả —</option></select>
+        </div>
+        <div class="field" data-need="ten_tp">
+          <label>Lọc · Thành phố</label>
+          <select id="tk-tp"><option value="">— Tất cả —</option></select>
         </div>
         <div class="field" data-need="mh_key">
           <label>Lọc · Mặt hàng</label>
@@ -507,7 +515,7 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
                 <option value="nam">Năm</option>
                 <option value="loai_kh">Loại KH</option>
                 <option value="mh">Mặt hàng</option>
-                <option value="bang">Tỉnh</option>
+                <option value="bang">Miền</option>
               </select>
             </div>
             <div class="field"><label>Giá trị</label>
@@ -639,11 +647,13 @@ const PALETTE = ["#4f46e5", "#10b981", "#f59e0b", "#06b6d4", "#ef4444", "#8b5cf6
 
 // ============== Init metadata ==============
 async function loadMetadata() {
-  const [nam, loaiKh, mh, tinh] = await Promise.all([
+  const [nam, loaiKh, mh, tinh, tp, kh] = await Promise.all([
     api("/api/metadata/nam"),
     api("/api/metadata/loai-kh"),
     api("/api/metadata/mat-hang"),
     api("/api/metadata/tinh"),
+    api("/api/metadata/tp"),
+    api("/api/metadata/khach-hang"),
   ]);
   ["ds-nam", "tk-nam"].forEach(id => {
     const sel = el(id); nam.forEach(n => sel.appendChild(mkOption(n)));
@@ -654,6 +664,8 @@ async function loadMetadata() {
     el("tk-mh").appendChild(mkOption(m.mh_key, m.mo_ta));
   });
   tinh.forEach(v => el("tk-tinh").appendChild(mkOption(v)));
+  tp.forEach(t => el("tk-tp").appendChild(mkOption(t.ten_tp, `${t.ten_tp} (${t.bang})`)));
+  kh.forEach(k => el("ds-kh").appendChild(mkOption(k.kh_key, `${k.ten} · ${k.loai_kh}`)));
   el("kpi-namso").textContent = nam.length;
 }
 
@@ -733,7 +745,7 @@ const COL_LABEL = {
   loai_kh: { key: "loai_kh", label: "Loại KH" },
   kh_key: { key: "kh_key", label: "Mã KH" },
   ten: { key: "ten", label: "Tên KH" },
-  bang: { key: "bang", label: "Tỉnh" },
+  bang: { key: "bang", label: "Miền" },
   ten_tp: { key: "ten_tp", label: "Thành phố" },
   ch_key: { key: "ch_key", label: "Cửa hàng" },
 };
@@ -836,6 +848,7 @@ async function runDoanhSo() {
   const lq = el("ds-quy").value; if (lq) params.set("loc_quy", lq);
   const lt = el("ds-thang").value; if (lt) params.set("loc_thang", lt);
   const lk = el("ds-loai-kh").value; if (lk) params.set("loc_loai_kh", lk);
+  const lkh = el("ds-kh").value; if (lkh) params.set("loc_kh", lkh);
   const lm = el("ds-mh").value; if (lm) params.set("loc_mh", lm);
 
   let res;
@@ -881,7 +894,7 @@ async function runDoanhSo() {
 el("ds-run").addEventListener("click", runDoanhSo);
 el("ds-reset").addEventListener("click", () => {
   el("ds-nam").value = ""; el("ds-quy").value = ""; el("ds-thang").value = "";
-  el("ds-loai-kh").value = ""; el("ds-mh").value = "";
+  el("ds-loai-kh").value = ""; el("ds-kh").value = ""; el("ds-mh").value = "";
   ["time", "mh", "kh"].forEach(ax => {
     axisState.ds[ax] = "none";
     document.querySelectorAll(`.seg[data-cube="ds"][data-axis="${ax}"] .seg-item`).forEach(b => {
@@ -902,6 +915,7 @@ async function runTonKho() {
   const lq = el("tk-quy").value; if (lq) params.set("loc_quy", lq);
   const lth = el("tk-thang").value; if (lth) params.set("loc_thang", lth);
   const lt = el("tk-tinh").value; if (lt) params.set("loc_bang", lt);
+  const ltp = el("tk-tp").value; if (ltp) params.set("loc_ten_tp", ltp);
   const lm = el("tk-mh").value; if (lm) params.set("loc_mh", lm);
 
   let res;
@@ -930,7 +944,7 @@ async function runTonKho() {
 el("tk-run").addEventListener("click", runTonKho);
 el("tk-reset").addEventListener("click", () => {
   el("tk-nam").value = ""; el("tk-quy").value = ""; el("tk-thang").value = "";
-  el("tk-tinh").value = ""; el("tk-mh").value = "";
+  el("tk-tinh").value = ""; el("tk-tp").value = ""; el("tk-mh").value = "";
   ["time", "mh", "loc"].forEach(ax => {
     axisState.tk[ax] = "none";
     document.querySelectorAll(`.seg[data-cube="tk"][data-axis="${ax}"] .seg-item`).forEach(b => {
