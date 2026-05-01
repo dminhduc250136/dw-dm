@@ -244,6 +244,12 @@ def get_kh():
     return query_all(DB_OLAP, "SELECT kh_key, ten, loai_kh FROM olap_ds_kh ORDER BY ten")
 
 
+@app.get("/api/metadata/cua-hang")
+def get_ch():
+    rows = query_all(DB_OLAP, "SELECT DISTINCT ch_key FROM olap_tk_ch ORDER BY ch_key")
+    return [r["ch_key"] for r in rows]
+
+
 # =====================================================================
 # Sales Cube
 # =====================================================================
