@@ -234,6 +234,16 @@ def get_tinh():
     return [r["bang"] for r in rows]
 
 
+@app.get("/api/metadata/tp")
+def get_tp():
+    return query_all(DB_OLAP, "SELECT DISTINCT bang, ten_tp FROM olap_tk_tp ORDER BY bang, ten_tp")
+
+
+@app.get("/api/metadata/khach-hang")
+def get_kh():
+    return query_all(DB_OLAP, "SELECT kh_key, ten, loai_kh FROM olap_ds_kh ORDER BY ten")
+
+
 # =====================================================================
 # Sales Cube
 # =====================================================================
