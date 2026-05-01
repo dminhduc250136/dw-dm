@@ -17,7 +17,7 @@ load_dotenv()
 
 DB_SERVER = os.getenv("DB_SERVER", "localhost")
 DB_USER = os.getenv("DB_USER", "sa")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "123456")
 DB_DRIVER = os.getenv("DB_DRIVER", "ODBC Driver 17 for SQL Server")
 DB_OLAP = os.getenv("DB_OLAP", "OLAP_QuanLyBanHang")
 DB_DW = os.getenv("DB_DW", "DW_Core")
