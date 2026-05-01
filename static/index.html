@@ -442,6 +442,10 @@ table tbody tr:hover { background: var(--surface-2); cursor: pointer; }
           <label>Lọc · Thành phố</label>
           <select id="tk-tp"><option value="">— Tất cả —</option></select>
         </div>
+        <div class="field" data-need="ch_key">
+          <label>Lọc · Cửa hàng</label>
+          <select id="tk-ch"><option value="">— Tất cả —</option></select>
+        </div>
         <div class="field" data-need="mh_key">
           <label>Lọc · Mặt hàng</label>
           <select id="tk-mh"><option value="">— Tất cả —</option></select>
@@ -647,13 +651,14 @@ const PALETTE = ["#4f46e5", "#10b981", "#f59e0b", "#06b6d4", "#ef4444", "#8b5cf6
 
 // ============== Init metadata ==============
 async function loadMetadata() {
-  const [nam, loaiKh, mh, tinh, tp, kh] = await Promise.all([
+  const [nam, loaiKh, mh, tinh, tp, kh, ch] = await Promise.all([
     api("/api/metadata/nam"),
     api("/api/metadata/loai-kh"),
     api("/api/metadata/mat-hang"),
     api("/api/metadata/tinh"),
     api("/api/metadata/tp"),
     api("/api/metadata/khach-hang"),
+    api("/api/metadata/cua-hang"),
   ]);
   ["ds-nam", "tk-nam"].forEach(id => {
     const sel = el(id); nam.forEach(n => sel.appendChild(mkOption(n)));
@@ -666,6 +671,7 @@ async function loadMetadata() {
   tinh.forEach(v => el("tk-tinh").appendChild(mkOption(v)));
   tp.forEach(t => el("tk-tp").appendChild(mkOption(t.ten_tp, `${t.ten_tp} (${t.bang})`)));
   kh.forEach(k => el("ds-kh").appendChild(mkOption(k.kh_key, `${k.ten} · ${k.loai_kh}`)));
+  ch.forEach(c => el("tk-ch").appendChild(mkOption(c)));
   el("kpi-namso").textContent = nam.length;
 }
 
@@ -916,6 +922,7 @@ async function runTonKho() {
   const lth = el("tk-thang").value; if (lth) params.set("loc_thang", lth);
   const lt = el("tk-tinh").value; if (lt) params.set("loc_bang", lt);
   const ltp = el("tk-tp").value; if (ltp) params.set("loc_ten_tp", ltp);
+  const lch = el("tk-ch").value; if (lch) params.set("loc_ch", lch);
   const lm = el("tk-mh").value; if (lm) params.set("loc_mh", lm);
 
   let res;
@@ -944,7 +951,8 @@ async function runTonKho() {
 el("tk-run").addEventListener("click", runTonKho);
 el("tk-reset").addEventListener("click", () => {
   el("tk-nam").value = ""; el("tk-quy").value = ""; el("tk-thang").value = "";
-  el("tk-tinh").value = ""; el("tk-tp").value = ""; el("tk-mh").value = "";
+  el("tk-tinh").value = ""; el("tk-tp").value = ""; el("tk-ch").value = "";
+  el("tk-mh").value = "";
   ["time", "mh", "loc"].forEach(ax => {
     axisState.tk[ax] = "none";
     document.querySelectorAll(`.seg[data-cube="tk"][data-axis="${ax}"] .seg-item`).forEach(b => {
